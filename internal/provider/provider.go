@@ -10,34 +10,40 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+// Create the provider
+func Provider(version string) *schema.Provider {
+	p := &schema.Provider{
+		Schema: map[string]*schema.Schema{
+			"api_key": {
+				Description: "The API key for the SparkPost account.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("SPARKPOST_API_KEY", nil),
+			},
+			"base_url": {
+				Description: "The base URL for the SparkPost account.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("SPARKPOST_BASE_URL", "https://api.sparkpost.com"),
+			},
+		},
+		ResourcesMap: map[string]*schema.Resource{
+			"sparkpost_template": resourceTemplate(),
+		},
+		DataSourcesMap: map[string]*schema.Resource{
+			"sparkpost_template": dataSourceTemplate(),
+			"sparkpost_webhook":  dataSourceWebhook(),
+		},
+	}
+
+	p.ConfigureContextFunc = configure(version, p)
+
+	return p
+}
+
 func New(version string) func() *schema.Provider {
 	return func() *schema.Provider {
-		p := &schema.Provider{
-			Schema: map[string]*schema.Schema{
-				"api_key": {
-					Description: "The API key for the SparkPost account.",
-					Type:        schema.TypeString,
-					Optional:    true,
-					DefaultFunc: schema.EnvDefaultFunc("SPARKPOST_API_KEY", nil),
-				},
-				"base_url": {
-					Description: "The base URL for the SparkPost account.",
-					Type:        schema.TypeString,
-					Optional:    true,
-					DefaultFunc: schema.EnvDefaultFunc("SPARKPOST_BASE_URL", "https://api.sparkpost.com"),
-				},
-			},
-			ResourcesMap: map[string]*schema.Resource{
-				"sparkpost_template": resourceTemplate(),
-			},
-			DataSourcesMap: map[string]*schema.Resource{
-				"sparkpost_template": dataSourceTemplate(),
-			},
-		}
-
-		p.ConfigureContextFunc = configure(version, p)
-
-		return p
+		return Provider(version)
 	}
 }
 
